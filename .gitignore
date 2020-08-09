@@ -1,0 +1,9 @@
+.vscode
+.env
+env
+tutorials
+__pycache__
+venv
+config
+data
+logs
