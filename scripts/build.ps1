@@ -1,4 +1,4 @@
-docker build -t slur-counter:1.0 .
+docker build -t slur-counter .
 
 docker run -it --rm --name slur `
 -v /home/docker/slur/config:/config `

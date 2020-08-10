@@ -15,7 +15,7 @@ import json
 try:
     with open(f'{conf_path}/config.json') as f:
         data = json.load(f)
-        discord_token = data['discord_token']
+        discord_token = data['discord_token'].strip()
         logging_level = data['logging_level']
         f.close()
 except:
