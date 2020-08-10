@@ -21,7 +21,7 @@ sudo docker run -it \
 
 When you're sure its up and running, use `Ctrl+P` the `Ctrl+Q` to hide the output of the container.
 
-## Upgrading
+### Upgrading
 
 Lmao idk bruh try sum like
 
@@ -30,6 +30,28 @@ sudo docker stop slurs && \
 sudo docker rm slurs && \
 sudo docker image pull superminecraftkid64/slur-counter
 
+sudo docker run -it \
+    --name slurs \
+    -v /slurs/data:/data \
+    -v /slurs/config:/config \
+    -v /slurs/logs:/logs \
+    superminecraftkid64/slur-counter
+```
+
+### Build Yourself
+
+If you want to build it yourself, do it like this
+
+#### Build the image
+
+```shell
+cd /cloned/repo/slurs-counter
+docker build -t slur-counter .
+```
+
+#### Run it
+
+```shell
 sudo docker run -it \
     --name slurs \
     -v /slurs/data:/data \
