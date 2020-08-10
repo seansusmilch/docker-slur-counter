@@ -1,5 +1,5 @@
 import sys
-from os import path
+from os import path,mkdir
 from glob import glob
 import ntpath
 from texttable import Texttable
@@ -10,6 +10,20 @@ dir = dir[0]
 conf_path = '/config'
 logs_path = '/logs'
 data_path = '/data'
+
+# conf_path = './config'
+# logs_path = './logs'
+# data_path = './data'
+
+# data folder structure setup
+userfolder = f'{data_path}/users'
+if not path.exists(userfolder):
+    print('Creating user folder in data')
+    mkdir(userfolder)
+wordsfolder = f'{data_path}/words'
+if not path.exists(wordsfolder):
+    print('Creating words folder in data')
+    mkdir(wordsfolder)
 
 import json
 try:
@@ -170,7 +184,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.author == bot.user:
+    if message.author == bot.user or message.author.bot:
         return
     await bot.process_commands(message)
     # get words from words files
@@ -235,12 +249,18 @@ async def scoreboard(ctx, arg='categories'):
     guild = ctx.message.guild
     users = guild.members
 
+
+
     scores = dict()
 
     if args[0] != 'all':
         word_list = word_lists[nouns.index(args[0])]
 
         for usr in users:
+            if usr.bot:
+                users.remove(usr)
+                continue
+
             count = 0
             logging.warning(f'Looking for evidence that {usr.name} is a {args[0]}')
 

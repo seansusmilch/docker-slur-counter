@@ -7,8 +7,6 @@ RUN apt update && apt upgrade && pip install --no-cache-dir -r requirements.txt
 
 COPY ./bot.py .
 
-VOLUME [ "/data/users", "/data/words", "/logs", "/config" ]
-
-# RUN mkdir /data/users /data/words
+VOLUME [ "/data", "/logs", "/config" ]
 
 CMD ["python", "./bot.py"]
