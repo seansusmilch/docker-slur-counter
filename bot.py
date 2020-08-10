@@ -16,6 +16,9 @@ try:
     with open(f'{conf_path}/config.json') as f:
         data = json.load(f)
         discord_token = data['discord_token'].strip()
+        if not discord_token or discord_token == "":
+            print('Discord token is empty!!!')
+            sys.exit(1)
         logging_level = data['logging_level']
         f.close()
 except:
