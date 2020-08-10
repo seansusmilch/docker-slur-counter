@@ -282,4 +282,5 @@ async def scoreboard(ctx, arg='categories'):
         board = board + '\n```'
         await ctx.send(board)
 
+print('Using token="'+discord_token+'" dont worry this will not be in bot.log')
 bot.run(discord_token)
