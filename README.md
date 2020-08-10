@@ -2,6 +2,12 @@
 
 Slur Counter is a discord bot that tracks word usage.
 
+## Note
+
+```text
+This is my very first discord bot and my very first docker image. Hopefully it works.
+```
+
 ## Usage
 
 This discord bot can be installed using docker. However its pretty simple to get it working without it. These directions will be for how to get it working with docker.
