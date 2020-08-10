@@ -19,7 +19,7 @@ sudo docker run -it \
     superminecraftkid64/slur-counter
 ```
 
-When you're sure its up and running, use `Ctrl+P` the `Ctrl+Q` to hide the output of the container.
+When you're sure its up and running, use `Ctrl+P` then `Ctrl+Q` to hide the output of the container.
 
 ### Upgrading
 
