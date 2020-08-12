@@ -7,13 +7,13 @@ from texttable import Texttable
 dir = path.split(path.abspath(__file__))
 dir = dir[0]
 
-conf_path = '/config'
-logs_path = '/logs'
-data_path = '/data'
+# conf_path = '/config'
+# logs_path = '/logs'
+# data_path = '/data'
 
-# conf_path = './config'
-# logs_path = './logs'
-# data_path = './data'
+conf_path = './config'
+logs_path = './logs'
+data_path = './data'
 
 # data folder structure setup
 userfolder = f'{data_path}/users'
@@ -279,8 +279,8 @@ async def scoreboard(ctx, arg='categories'):
 
         # scores from highest to lowest
         scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
-        print(bot.user.name)
-        del scores_ordered[bot.user.name]
+        # del scores_ordered[bot.user.name]
+        # scores_ordered.pop(bot.user.name)
         print('scores=',scores_ordered)
 
 
@@ -303,6 +303,7 @@ async def scoreboard(ctx, arg='categories'):
         board = board + '\n' + table.draw()
 
         board = board + '\n```'
+        
         await ctx.send(board)
 
 print('Using token="'+discord_token+'" dont worry this will not be in bot.log')
