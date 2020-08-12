@@ -7,13 +7,13 @@ from texttable import Texttable
 dir = path.split(path.abspath(__file__))
 dir = dir[0]
 
-# conf_path = '/config'
-# logs_path = '/logs'
-# data_path = '/data'
+conf_path = '/config'
+logs_path = '/logs'
+data_path = '/data'
 
-conf_path = './config'
-logs_path = './logs'
-data_path = './data'
+# conf_path = './config'
+# logs_path = './logs'
+# data_path = './data'
 
 # data folder structure setup
 userfolder = f'{data_path}/users'
