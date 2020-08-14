@@ -25,6 +25,10 @@ if not path.exists(wordsfolder):
     print('Creating words folder in data')
     mkdir(wordsfolder)
 
+
+"""
+Load Config
+"""
 import json
 try:
     with open(f'{conf_path}/config.json') as f:
@@ -34,30 +38,23 @@ try:
             print('Discord token is empty!!!')
             sys.exit(1)
         logging_level = data['logging_level']
+        silence = data['silence']
+        reactions = data['reactions']
         f.close()
 except:
     # create default secrets file
     with open(f'{conf_path}/config.json', 'w') as f:
         default = {
             'discord_token':"",
-            'logging_level': 4
+            'logging_level': 4,
+            'silence': False,
+            'reactions': True
         }
         json.dump(default,f,indent=2)
         f.close()
     print('Please edit the config.py file\nExiting...')
     input('hit enter to exit')
     sys.exit(1)
-
-# try:
-#     from config import discord_token,logging_level
-# except ImportError as e:
-#     # create default secrets file
-#     with open(dir+'/config.py', 'x') as f:
-#         f.write("discord_token = ''\nlogging_level = ")
-#         f.close()
-#     print('Please edit the config.py file\nExiting...')
-#     input()
-#     sys.exit(1)
 
 #logging
 import logging
@@ -79,102 +76,15 @@ fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', "%Y-%m-%d %
 cons.setFormatter(fmt)
 logging.getLogger('').addHandler(cons)
 logging.debug('Started!')
-
-import datetime
-
-def writeToJson(raw_data, filepath):
-    with open(filepath, 'w') as f:
-        json.dump(raw_data, f)
-        f.close()
-
-def readUsrJson(user_id :str):
-    json_file = f'{data_path}/users/{user_id}.json'
-    logging.info(f'Attempting to read json from {json_file}')
-    try:
-        with open(json_file) as f:
-            data = json.load(f)
-            f.close()
-        logging.warning(f'JSON for {user_id} loaded!')
-        return data
-    except json.decoder.JSONDecodeError as e:
-        logging.error('Couldnt retrieve json file for %s!' % user_id)
-        return 1
-    except FileNotFoundError as e:
-        logging.error(f'File not found. {json_file}')
-        return 2
-
-
-
-def add_entry(word :str, message):
-    user_id = message.author.id
-    server_id = str(message.guild.id)
-    message_link = 'https://discordapp.com/channels/%s/%s/%s' % (server_id, message.channel.id, message.id)
-    # json_file = '%s/data/users/%s.json' % (dir, user_id)
-    json_file = f'{data_path}/users/{user_id}.json'
-
-    new_evidence = {
-        "timeSent": str(message.created_at),
-        "message": message.content,
-        "link": message_link
-    }
-
-    new_word = {
-        word:{
-            "evidence":[new_evidence]
-        }
-    }
-
-    new_server = {
-        server_id:new_word
-    }
-
-    try:
-        with open(json_file) as f:
-            data = json.load(f)
-            f.close()
-        logging.info('JSON for %s loaded!' % message.author)
-    except json.decoder.JSONDecodeError as e:
-        logging.critical(f'Error loading JSON! {json_file}')
-    except FileNotFoundError as e:
-        first = {
-            "servers": new_server
-        }
-        writeToJson(first, json_file)
-        return
-
-    # see if server exists, add new server if not
-
-    try:
-        data['servers'][server_id]
-    except KeyError as e:
-        data['servers'].update(new_server)
-        writeToJson(data, json_file)
-        return
-
-    # if data['servers'][server_id] == None:
-    #     data['servers'][server_id] = new_server
-    #     writeToJson(data)
-    #     return
-    
-    # see if word exists, add new word if not
-
-    try:
-        data['servers'][server_id][word]
-    except KeyError as e:
-        data['servers'][server_id].update(new_word)
-        writeToJson(data, json_file)
-        return
-        
-    # add evidence
-
-    data['servers'][server_id][word]['evidence'].append(new_evidence)
-    writeToJson(data, json_file)
-    return
-
-        
-
+     
 import discord
 from discord.ext import commands
+
+from bin.users import Users
+from bin.words import Words
+
+usr = Users(data_path, logging)
+wrd = Words(data_path, logging)
 
 bot = commands.Bot(command_prefix='!')
 
@@ -187,25 +97,20 @@ async def on_message(message):
     if message.author == bot.user or message.author.bot:
         return
     await bot.process_commands(message)
-    # get words from words files
-    word_files = glob(f'{data_path}/words/*.txt')
-    # word_files = glob('%s/data/words/*.txt' % dir)
-    nouns = [ntpath.basename(f).replace('.txt','') for f in word_files]
-    word_lists = []
-    for word_file in word_files:
-        with open(word_file) as f:
-            ls = f.readlines()
-            lsstrip = [x.strip() for x in ls]
-            word_lists.append(lsstrip)
-            f.close()
+    
+    nouns = wrd.getNouns()
+    word_lists = wrd.getWordLists()
     logging.debug('loaded words from %s' % str(nouns))
 
     for word_list in word_lists:
         n = nouns[word_lists.index(word_list)]
         for word in word_list:
-            if word in message.content:
-                await message.channel.send("<@%s> is a certified %s" % (message.author.id, n))
-                add_entry(word,message)
+            if word in message.content.lower():
+                if not silence:
+                    await message.channel.send("<@%s> is a certified %s" % (message.author.id, n))
+                if reactions:
+                    await message.add_reaction("😱")
+                usr.add_entry(word,message)
 
 @bot.event
 async def on_command_error(ctx, err):
@@ -214,29 +119,17 @@ async def on_command_error(ctx, err):
 
 @bot.command(name='scores', help='Usage: scores <category>\nShows the scoreboard for a certain category of word. Use the "all" category to show scores for all categories.')
 async def scoreboard(ctx, arg='categories'):
-    print('ARGS: "',arg,'"')
     args = arg.split(' ')
-    print(args)
+    print('ARGS=', args)
 
     if len(args) > 1:
         await ctx.send('Too many arguments!')
         return
 
-    # word_files = glob('%s/data/words/*.txt' % dir)
-    word_files = glob(f'{data_path}/words/*.txt')
-    nouns = [ntpath.basename(f).replace('.txt','') for f in word_files]
-    word_lists = []
-    for word_file in word_files:
-        with open(word_file) as f:
-            ls = f.readlines()
-            lsstrip = [x.strip() for x in ls]
-            word_lists.append(lsstrip)
-            f.close()
-    logging.warning('loaded words from %s' % str(nouns))
+    nouns = wrd.getNouns()
 
     if args[0] == 'categories':
         msg = 'Category required\n```text\nAvailable Categories:\n'
-        # msg = msg + ('\t%s\n' % (x for x in nouns))
         for n in nouns:
             msg = msg + f'\t{n}\n'
         msg = msg + '\n```'
@@ -247,24 +140,24 @@ async def scoreboard(ctx, arg='categories'):
         await ctx.send('That category is not available. Use the scores command without any arguments to see available categories.')
         return
     guild = ctx.message.guild
-    users = guild.members
+    userls = guild.members
 
 
 
     scores = dict()
 
     if args[0] != 'all':
-        word_list = word_lists[nouns.index(args[0])]
+        word_list = wrd.getWordList(args[0])
 
-        for usr in users:
+        for usr in userls:
             if usr.bot:
-                users.remove(usr)
+                userls.remove(usr)
                 continue
 
             count = 0
             logging.warning(f'Looking for evidence that {usr.name} is a {args[0]}')
 
-            data = readUsrJson(usr.id)
+            data = usr.readUsrJson(usr.id)
             if data == 1 or data == 2:
                 scores[usr.name] = count
                 continue
@@ -279,10 +172,7 @@ async def scoreboard(ctx, arg='categories'):
 
         # scores from highest to lowest
         scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
-        # del scores_ordered[bot.user.name]
-        # scores_ordered.pop(bot.user.name)
         print('scores=',scores_ordered)
-
 
         # create the scoreboard
         table = Texttable()
@@ -294,17 +184,18 @@ async def scoreboard(ctx, arg='categories'):
             vals.append(row)
         table.add_rows(vals)
 
-
-
         board = '```text\nWord List:'
         board = board + "".join(f'\n\t{x}' for x in word_list)
         board = board + '\n'
-        # board = board + "".join(f'\n\t{scores_ordered[n]}\t{n}' for n in scores_ordered)
         board = board + '\n' + table.draw()
 
         board = board + '\n```'
         
         await ctx.send(board)
+
+    table = Texttable()
+    table.set_deco(Texttable.HEADER)
+
 
 print('Using token="'+discord_token+'" dont worry this will not be in bot.log')
 bot.run(discord_token)
