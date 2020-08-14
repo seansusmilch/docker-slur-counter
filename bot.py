@@ -149,26 +149,27 @@ async def scoreboard(ctx, arg='categories'):
     if args[0] != 'all':
         word_list = wrd.getWordList(args[0])
 
-        for usr in userls:
-            if usr.bot:
-                userls.remove(usr)
+        for u in userls:
+            if u.bot:
+                userls.remove(u)
                 continue
 
             count = 0
-            logging.warning(f'Looking for evidence that {usr.name} is a {args[0]}')
 
-            data = usr.readUsrJson(usr.id)
-            if data == 1 or data == 2:
-                scores[usr.name] = count
+            data = usr.readUsrJson(u.id)
+            if isinstance(data, str):
+                logging.warning(f'{u.name} - {data}')
+                scores[u.name] = count
                 continue
 
-            data = data['servers'][str(guild.id)]
+            data = data['servers'][str(guild.id)]   # trim it down
             for word in data.keys():
                 if word in word_list:
                     evidence = data[word]['evidence']
                     count = count + len(evidence)
             
-            scores[usr.name] = count
+            logging.info(f'Found evidence that {u.name} is a {args[0]}, count={count}')
+            scores[u.name] = count
 
         # scores from highest to lowest
         scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
