@@ -70,7 +70,7 @@ class Users():
                 self.writeToJson(first, user_id)
                 return
             else:
-                logging.warning(f'Something terrible has happened! {data}')
+                self.logging.warning(f'Something terrible has happened! {data}')
 
         # see if server exists, add new server if not
 
