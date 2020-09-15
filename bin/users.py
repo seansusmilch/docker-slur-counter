@@ -5,7 +5,6 @@ class Users():
         self.data_path = data_path
         self.logging = logging
 
-
     def writeToJson(self, raw_data:dict, user_id:str):
         """Writes the data to a json file
         """
