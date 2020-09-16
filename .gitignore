@@ -8,3 +8,4 @@ config
 data
 logs
 scratch
+img

@@ -53,8 +53,8 @@ def main():
         with open(f'{conf_path}/config.json', 'w') as f:
             default = {
                 'discord_token':"",
-                'logging_level': 4,
-                'silence': False,
+                'logging_level': 3,
+                'silence': True,
                 'reactions': True
             }
             json.dump(default,f,indent=2)
@@ -88,7 +88,8 @@ def main():
     # start bot
     users = Users(data_path, log)
     words = Words(data_path, log)
-    bot = SlurCounter(discord_token, log, users, words)
+    bot = SlurCounter(discord_token, log, users, words,
+        silence=silence, reactions=reactions)
 
 if __name__ == '__main__':
     main()

@@ -8,9 +8,11 @@ from bin.scores import Scores
 
 class SlurCounter(commands.Bot):
     
-    def __init__(self, token, logging, usermod, wordmod) -> None:
+    def __init__(self, token, logging, usermod, wordmod,
+            reactions = True,
+            silence = True) -> None:
         super().__init__(command_prefix='!')
-        self.logging = logging
+        self.log = logging
         self.usr = usermod
         self.wrd = wordmod
         # logging.info(f'Using token {token}')
@@ -21,7 +23,7 @@ class SlurCounter(commands.Bot):
 
     async def on_ready(self):
         print(f'{self.user.name} has connected to Discord!')
-        self.logging.info(f'{self.user.name} has connected to Discord!')
+        self.log.info(f'{self.user.name} has connected to Discord!')
 
     async def on_command_error(self, ctx, err):
         if isinstance(err, commands.errors.CheckFailure):
