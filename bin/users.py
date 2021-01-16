@@ -8,6 +8,7 @@ class Users():
     def writeToJson(self, raw_data:dict, user_id:str):
         """Writes the data to a json file
         """
+        self.logging.info(f'Writing to json file for {user_id}')
         json_file = f'{self.data_path}/users/{user_id}.json'
 
         with open(json_file, 'w') as f:
@@ -19,25 +20,30 @@ class Users():
             If no file is found, it will return a string,
             if there is a decoding error, it will return a string.
         """
+        self.logging.info(f'Reading user json for {user_id}')
         json_file = f'{self.data_path}/users/{user_id}.json'
-        # logging.info(f'Attempting to read json from {json_file}')
+        self.logging.info(f'Attempting to read json from {json_file}')
         try:
             with open(json_file) as f:
                 data = json.load(f)
                 f.close()
-            # logging.warning(f'JSON for {user_id} loaded!')
+            # self.logging.info(f'JSON: {data}')
             return data
         except json.decoder.JSONDecodeError as e:
-            # logging.error('Couldnt retrieve json file for %s!' % user_id)
+            self.logging.error(f'Couldnt retrieve json file for {user_id}!')
+            self.logging.error(e.message)
             return f"Decoding error {json_file}"
         except FileNotFoundError as e:
-            # logging.error(f'File not found. {json_file}')
+            self.logging.error(f'File not found. {json_file}')
             return f"File not found {json_file}"
 
     def add_entry(self, word :str, message):
         """ Adds an incident to the users json file.
         
         """
+        self.logging.info(f'MSG: {message}')
+        self.logging.info(f'GUILD: {message.guild}')
+
         user_id = message.author.id
         server_id = str(message.guild.id)
         message_link = 'https://discordapp.com/channels/%s/%s/%s' % (server_id, message.channel.id, message.id)

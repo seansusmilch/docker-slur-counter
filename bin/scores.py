@@ -33,7 +33,7 @@ class Scores(commands.Cog):
         
         nouns = self.wrd.getNouns()
         word_lists = self.wrd.getWordLists()
-        self.log.debug('loaded words from %s' % str(nouns))
+        self.log.debug(f'loaded words from {str(nouns)}')
 
         for word_list in word_lists:
             n = nouns[word_lists.index(word_list)]
@@ -44,6 +44,14 @@ class Scores(commands.Cog):
                     if self.reactions:
                         await message.add_reaction("😱")
                     self.usr.add_entry(word,message)
+
+    # @commands.command(name='test')
+    # async def test(self, ctx):
+    #     self.log.info('Testing testing...')
+    #     guild = ctx.message.guild
+    #     userls = guild.members
+
+    #     await ctx.reply(f'Guild: {guild}\nUsers: {userls}')
 
     @commands.command(name='scores', help='Usage: scores <category> <format>\n\nShows the scoreboard for a certain category of word. Use the "all" category to show scores for all categories. Use !scores with no arguments to show a list of available categories.\n\nAvaliable formats: text,img')
     async def scoreboard(self, ctx,
@@ -82,7 +90,7 @@ class Scores(commands.Cog):
                 for noun in nouns:
                     new = self.get_score(user,guild,noun=noun)
                     if new < 0:
-                        print(f'invalid output from get_score {user},{guild},{noun}')
+                        self.log.error(f'invalid output from get_score {user},{guild},{noun}')
                     gscores[noun] += new
                     total += new
                     scores[user.name][noun] = new
@@ -116,6 +124,8 @@ class Scores(commands.Cog):
                 count = 0
 
                 data = self.usr.readUsrJson(u.id)
+                self.log.info(f'DATA: {data}')
+
                 if isinstance(data, str):
                     self.log.warning(f'{u.name} - {data}')
                     scores[u.name] = count
@@ -132,7 +142,6 @@ class Scores(commands.Cog):
 
             # scores from highest to lowest
             scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
-            print('scores=',scores_ordered)
 
             # create the scoreboard
             table = Texttable()
@@ -222,9 +231,6 @@ class Scores(commands.Cog):
         font_path = 'fonts/SourceCodePro-SemiBold.ttf'
         font_size = 16
         txt_color = 'white'
-
-        from glob import glob
-        print(glob('./*'))
         save_path = 'img/latest.png'
 
         # check if save_path exists
@@ -239,8 +245,7 @@ class Scores(commands.Cog):
             draw = ImageDraw.Draw(image)
             draw.text((30,30), board, fill=txt_color, font=font)
         except Exception as e:
-            print(sys.exc_info())
-            print(e)
+            self.log.error(sys.exc_info())
             raise
 
         # crop
