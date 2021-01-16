@@ -27,9 +27,24 @@ sudo docker run -it \
 
 When you're sure its up and running, use `Ctrl+P` then `Ctrl+Q` to hide the output of the container.
 
-### Upgrading
+### Compose
 
-Lmao idk bruh try sum like
+```yml
+version: '3.8'
+
+services:
+    slurs:
+        container_name: 'slurs'
+        image: superminecraftkid64/slur-counter:latest
+        volumes:
+            - ./config:/config:ro
+            - ./data:/data
+            - ./logs:/logs
+        restart: unless-stopped
+```
+
+
+### Upgrading
 
 ```shell
 sudo docker stop slurs && \
