@@ -1,3 +1,6 @@
+from tinydb.table import Table
+from bin.words import Words
+from bin.users import Users
 from os import mkdir, path
 import sys
 
@@ -10,11 +13,12 @@ from texttable import Texttable
 # from bin.users import Users
 # from bin.words import Words
 from PIL import Image, ImageDraw, ImageFont
+from tinydb import TinyDB, where
 
 
 class Scores(commands.Cog):
 
-    def __init__(self, bot, logging, usermod, wordmod,
+    def __init__(self, bot, logging, usermod:Users, wordmod:Words, user_tabl:Table,
             reactions = True,
             silence = True) -> None:
 
@@ -22,11 +26,12 @@ class Scores(commands.Cog):
         self.usr = usermod
         self.wrd = wordmod
         self.log = logging
+        self.user_tbl = user_tabl
         self.reactions = reactions
         self.silence = silence
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message:discord.Message):
         if message.author == self.bot.user or message.author.bot:
             return
         # await self.bot.process_commands(message)
@@ -40,7 +45,7 @@ class Scores(commands.Cog):
             for word in word_list:
                 if word in message.content.lower():
                     if not self.silence:
-                        await message.channel.send("<@%s> is a certified %s" % (message.author.id, n))
+                        await message.channel.send(f"<@{message.author.id}> is a certified {n}" )
                     if self.reactions:
                         await message.add_reaction("😱")
                     self.usr.add_entry(word,message)
@@ -118,27 +123,38 @@ class Scores(commands.Cog):
 
             for u in userls:
                 if u.bot:
-                    userls.remove(u)
                     continue
-
-                count = 0
-
-                data = self.usr.readUsrJson(u.id)
-                self.log.info(f'DATA: {data}')
-
-                if isinstance(data, str):
-                    self.log.warning(f'{u.name} - {data}')
-                    scores[u.name] = count
-                    continue
-
-                data = data['servers'][str(guild.id)]   # trim it down
-                for word in data.keys():
-                    if word in word_list:
-                        evidence = data[word]['evidence']
-                        count = count + len(evidence)
                 
-                self.log.info(f'Found evidence that {u.name} is a {cat[0]}, count={count}')
-                scores[u.name] = count
+                
+
+                # data = self.usr.readUsrJson(u.id)
+                # self.log.debug(f'DATA: {data}')
+
+                # if isinstance(data, str):
+                #     self.log.warning(f'{u.name} - {data}')
+                #     scores[u.name] = count
+                #     continue
+
+                # data = data['servers'][str(guild.id)]   # trim it down
+                # for word in data.keys():
+                #     if word in word_list:
+                #         evidence = data[word]['evidence']
+                #         count = count + len(evidence)
+
+                # count = 0
+                # all_evidence = self.user_tbl.get(where('uid'==u.id))
+                # if not all_evidence:
+                #     scores[u.name] = count
+                #     continue
+
+                # for word in word_list:
+                #     if word not in all_evidence.keys():
+                #         continue
+                    
+                #     count += len(all_evidence[word])
+                
+                # self.log.info(f'Found evidence that {u.name} is a {cat[0]}, count={count}')
+                scores[u.name] = self.get_score(u, guild, noun=cat)
 
             # scores from highest to lowest
             scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
@@ -198,30 +214,47 @@ class Scores(commands.Cog):
         if user.bot:
             self.log.warning(f'{user.name} is a bot! Not keeping score')
             raise InvalidArgument()
-
-        count = 0
-        data = self.usr.readUsrJson(user.id)
-        if isinstance(data, str):
-            self.log.warning(f'JSON was read as string!{user.name} - {data}')
-            return count        
-        data = data['servers'][str(guild.id)]   # trim it down
-
-        if noun:
-            word_list = self.wrd.getWordList(noun)
-            for word in data.keys():
-                if word in word_list:
-                    evidence = data[word]['evidence']
-                    count = count + len(evidence)
-            
-            if count > 0:
-                self.log.info(f'Found evidence that {user.name} is a {noun}, count={count}')
-            else:
-                self.log.info(f'Looks like {user.name} is clean...')
-
-            return count
         if word:
             self.log.info('Single word score not implemented yet.')
             return -1
+        
+        self.log.info(f'Getting score for {user.name} - {noun}')
+
+        # count = 0
+        # data = self.usr.readUsrJson(user.id)
+        # if isinstance(data, str):
+        #     self.log.warning(f'JSON was read as string!{user.name} - {data}')
+        #     return count        
+        # data = data['servers'][str(guild.id)]   # trim it down
+
+        # if noun:
+        #     word_list = self.wrd.getWordList(noun)
+        #     for word in data.keys():
+        #         if word in word_list:
+        #             evidence = data[word]['evidence']
+        #             count = count + len(evidence)
+            
+        #     if count > 0:
+        #         self.log.info(f'Found evidence that {user.name} is a {noun}, count={count}')
+        #     else:
+        #         self.log.info(f'Looks like {user.name} is clean...')
+        if noun:
+            word_list = self.wrd.getWordList(noun)
+            count = 0
+            all_evidence = self.user_tbl.get(where('uid')==user.id)
+            # print(all_evidence)
+            if not all_evidence:
+                self.log.info('No evidence found :(')
+                return count
+            for word in word_list:
+                if word not in all_evidence.keys():
+                    continue
+                evidence = list(all_evidence[word])
+                count += len(evidence)
+
+            self.log.info(count)
+            return count
+        
 
 
     def text_to_img(self, board : str) -> str:

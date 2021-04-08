@@ -1,0 +1,1 @@
+tar -czvf slur-counter.tar.gz .\bot.py .\bin .\fonts .\requirements.txt .\.dockerignore .\Dockerfile

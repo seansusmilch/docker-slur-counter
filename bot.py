@@ -6,6 +6,7 @@ import json
 
 import discord
 from discord.abc import User
+from tinydb import TinyDB
 from bin.slurs import SlurCounter
 from bin.users import Users
 from bin.words import Words
@@ -85,10 +86,12 @@ def main():
     log.getLogger('').addHandler(cons)
     log.debug('Started!')
 
+    db = TinyDB(f'{data_path}/db.json')
+    user_tbl = db.table('users')
     # start bot
-    users = Users(data_path, log)
+    users = Users(log, user_tbl)
     words = Words(data_path, log)
-    bot = SlurCounter(discord_token, log, users, words,
+    bot = SlurCounter(discord_token, log, users, words, user_tbl,
         silence=silence, reactions=reactions)
 
 if __name__ == '__main__':

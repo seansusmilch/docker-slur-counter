@@ -1,6 +1,7 @@
 from texttable import Texttable
 import discord
 from discord.ext import commands
+from tinydb import TinyDB
 
 from bin.users import Users
 from bin.words import Words
@@ -8,7 +9,7 @@ from bin.scores import Scores
 
 class SlurCounter(commands.Bot):
     
-    def __init__(self, token, logging, usermod, wordmod,
+    def __init__(self, token, logging, usermod, wordmod, user_tbl,
             reactions = True,
             silence = True) -> None:
         
@@ -19,7 +20,7 @@ class SlurCounter(commands.Bot):
         self.wrd = wordmod
         # logging.info(f'Using token {token}')
         self.log.info(f'Registering cogs')
-        self.add_cog(Scores(self, logging, usermod, wordmod))
+        self.add_cog(Scores(self, logging, usermod, wordmod, user_tbl))
         self.run(token)
 
     async def on_ready(self):
