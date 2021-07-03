@@ -12,4 +12,5 @@ $files = @(
 # Clear cache before making tar
 Get-ChildItem -Include __pycache__ -Recurse -Force | Remove-Item -Force -Recurse
 
-tar -czvf whos-on.tar.gz $files
+mkdir builds
+tar -czvf builds/slurs-counter.tar.gz $files

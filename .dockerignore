@@ -7,3 +7,4 @@ data
 scripts
 .gitignore
 *.gz
+builds
