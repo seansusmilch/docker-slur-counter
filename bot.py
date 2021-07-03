@@ -1,98 +1,51 @@
-import logging as log
-import logging
-from os import path,mkdir
-import sys
-import json
-
 import discord
-from discord.abc import User
-from tinydb import TinyDB
-from bin.slurs import SlurCounter
-from bin.users import Users
-from bin.words import Words
+from discord.ext import commands 
+from bin.scores import Scores
+import logging as log
 
+INTENTS = discord.Intents.all()
 
-def main():
-    conf_path = '/config'
-    logs_path = '/logs'
-    data_path = '/data'
+class EpicDiscordBot(commands.Bot):
+    def __init__(self, data_path:str):
+        super(EpicDiscordBot, self).__init__(command_prefix='!', intents=INTENTS)
+        log.info(f'Registering cogs')
+        self.add_cog(Scores(self, data_path))
 
-    # conf_path = './config'
-    # logs_path = './logs'
-    # data_path = './data'
-    dir = path.split(path.abspath(__file__))[0]
+    async def on_ready(self):
+        print(f'Logged in as {self.user}')
 
-    """
-    Data folder structure setup
-    """
-    userfolder = f'{data_path}/users'
-    if not path.exists(userfolder):
-        print('Creating user folder in data')
-        mkdir(userfolder)
-    wordsfolder = f'{data_path}/words'
-    if not path.exists(wordsfolder):
-        print('Creating words folder in data')
-        mkdir(wordsfolder)
+    async def on_command_error(self, ctx, err):
+        if isinstance(err, commands.errors.CheckFailure):
+            await ctx.send('You do not have the correct role for this command.')
+    
+    async def get_connected_voice(self, channel_id):
+        chnl = await self.fetch_channel(channel_id)
+        ids = chnl.voice_states.keys() 
 
+        members = []
+        for id in ids:
+            usr = await self.fetch_user(id)
+            members.append(usr.display_name)
+        return members
 
-    """
-    Load Config
-    """
-    try:
-        with open(f'{conf_path}/config.json') as f:
-            data = json.load(f)
-            discord_token = data['discord_token'].strip()
-            if not discord_token or discord_token == "":
-                print('Discord token is empty!!!')
-                sys.exit(1)
-            logging_level = data['logging_level']
-            silence = data['silence']
-            reactions = data['reactions']
-            f.close()
-    except:
-        # create default secrets file
-        with open(f'{conf_path}/config.json', 'w') as f:
-            default = {
-                'discord_token':"",
-                'logging_level': 3,
-                'silence': True,
-                'reactions': True
-            }
-            json.dump(default,f,indent=2)
-            f.close()
-        print('Please edit the config.json file\nExiting...')
-        input('hit enter to exit')
-        sys.exit(1)
+async def test_loop(client:EpicDiscordBot):
+    while True:
+        input('Press enter to run get_connected_voice')
 
-    """
-    Logging
-    """
-    switcher = {
-    4: log.DEBUG,
-    3: log.INFO,
-    2: log.WARNING,
-    1: log.ERROR,
-    0: log.CRITICAL
-    }
-    log.basicConfig(filename=f'{logs_path}/bot.log',
-        level=switcher.get(logging_level, log.DEBUG),
-        datefmt="%Y-%m-%d %H:%M:%S",
-        format='%(asctime)s - %(levelname)s - %(message)s'
-        )
-    cons = log.StreamHandler()
-    cons.setLevel(switcher.get(logging_level, log.DEBUG))
-    fmt = log.Formatter('%(asctime)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
-    cons.setFormatter(fmt)
-    log.getLogger('').addHandler(cons)
-    log.debug('Started!')
-
-    db = TinyDB(f'{data_path}/db.json')
-    user_tbl = db.table('users')
-    # start bot
-    users = Users(log, user_tbl)
-    words = Words(data_path, log)
-    bot = SlurCounter(discord_token, log, users, words, user_tbl,
-        silence=silence, reactions=reactions)
+        print(await client.get_connected_voice(740393371021082793))
 
 if __name__ == '__main__':
-    main()
+    from prod import conf
+    import asyncio
+    import threading
+    
+    DISCORD_TOKEN = conf['discord']['bot_token'].get()
+    DATA_PATH = conf['discord']['slur_data'].get(str)
+    
+    client = EpicDiscordBot(DATA_PATH)
+    loop = asyncio.get_event_loop()
+    loop.create_task(client.start(DISCORD_TOKEN))
+    threading.Thread(target=loop.run_forever, daemon=True).start()
+    # loop.run_forever()
+
+    asyncio.run(test_loop(client))

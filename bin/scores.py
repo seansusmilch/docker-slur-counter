@@ -1,8 +1,7 @@
-from tinydb.table import Table
 from bin.words import Words
 from bin.users import Users
 from os import mkdir, path
-import sys
+import logging as log
 
 import discord
 import numpy as np
@@ -18,15 +17,16 @@ from tinydb import TinyDB, where
 
 class Scores(commands.Cog):
 
-    def __init__(self, bot, logging, usermod:Users, wordmod:Words, user_tabl:Table,
+    def __init__(self, bot, data_path:str,
             reactions = True,
             silence = True) -> None:
-
+        log.info('Loading Scores cog...')
+        db = TinyDB(f'{data_path}/db.json')
+        user_tbl = db.table('users')
         self.bot = bot
-        self.usr = usermod
-        self.wrd = wordmod
-        self.log = logging
-        self.user_tbl = user_tabl
+        self.usr = Users(user_tbl)
+        self.wrd = Words(data_path)
+        self.user_tbl = user_tbl
         self.reactions = reactions
         self.silence = silence
 
@@ -35,10 +35,10 @@ class Scores(commands.Cog):
         if message.author == self.bot.user or message.author.bot:
             return
         # await self.bot.process_commands(message)
-        
+        log.info('Someone said...')
         nouns = self.wrd.getNouns()
         word_lists = self.wrd.getWordLists()
-        self.log.debug(f'loaded words from {str(nouns)}')
+        log.debug(f'loaded words from {str(nouns)}')
 
         for word_list in word_lists:
             n = nouns[word_lists.index(word_list)]
@@ -50,20 +50,12 @@ class Scores(commands.Cog):
                         await message.add_reaction("😱")
                     self.usr.add_entry(word,message)
 
-    # @commands.command(name='test')
-    # async def test(self, ctx):
-    #     self.log.info('Testing testing...')
-    #     guild = ctx.message.guild
-    #     userls = guild.members
-
-    #     await ctx.reply(f'Guild: {guild}\nUsers: {userls}')
-
     @commands.command(name='scores', help='Usage: scores <category> <format>\n\nShows the scoreboard for a certain category of word. Use the "all" category to show scores for all categories. Use !scores with no arguments to show a list of available categories.\n\nAvaliable formats: text,img')
     async def scoreboard(self, ctx,
             cat='none',
             fmt='img'):
         
-        self.log.info(f'Processing args: cat="{cat}" fmt="{fmt}"')
+        log.info(f'Processing args: cat="{cat}" fmt="{fmt}"')
 
         guild = ctx.message.guild
         userls = guild.members
@@ -95,7 +87,7 @@ class Scores(commands.Cog):
                 for noun in nouns:
                     new = self.get_score(user,guild,noun=noun)
                     if new < 0:
-                        self.log.error(f'invalid output from get_score {user},{guild},{noun}')
+                        log.error(f'invalid output from get_score {user},{guild},{noun}')
                     gscores[noun] += new
                     total += new
                     scores[user.name][noun] = new
@@ -124,36 +116,6 @@ class Scores(commands.Cog):
             for u in userls:
                 if u.bot:
                     continue
-                
-                
-
-                # data = self.usr.readUsrJson(u.id)
-                # self.log.debug(f'DATA: {data}')
-
-                # if isinstance(data, str):
-                #     self.log.warning(f'{u.name} - {data}')
-                #     scores[u.name] = count
-                #     continue
-
-                # data = data['servers'][str(guild.id)]   # trim it down
-                # for word in data.keys():
-                #     if word in word_list:
-                #         evidence = data[word]['evidence']
-                #         count = count + len(evidence)
-
-                # count = 0
-                # all_evidence = self.user_tbl.get(where('uid'==u.id))
-                # if not all_evidence:
-                #     scores[u.name] = count
-                #     continue
-
-                # for word in word_list:
-                #     if word not in all_evidence.keys():
-                #         continue
-                    
-                #     count += len(all_evidence[word])
-                
-                # self.log.info(f'Found evidence that {u.name} is a {cat[0]}, count={count}')
                 scores[u.name] = self.get_score(u, guild, noun=cat)
 
             # scores from highest to lowest
@@ -179,18 +141,18 @@ class Scores(commands.Cog):
             return
 
         if board:
-            self.log.info(f'Successfully created scoreboard. "{board[:10]}"')
+            log.info(f'Successfully created scoreboard. "{board[:10]}"')
         else:
-            self.log.warning(f'Unable to create board')
+            log.warning(f'Unable to create board')
         # send in the desired format (text or image)
         if fmt == 'text':
             board = f'```text\n{board}\n```'
             await ctx.send(board)
             return
         elif fmt == 'img':
-            self.log.info(f'Creating image for board.')
+            log.info(f'Creating image for board.')
             ipath = self.text_to_img(board)
-            self.log.info(f'Opening image from {ipath}')
+            log.info(f'Opening image from {ipath}')
             with open(ipath, 'rb') as f:
                 img = discord.File(f)
                 f.close()
@@ -209,42 +171,23 @@ class Scores(commands.Cog):
             word = None) -> int:
 
         if noun == None and word == None:
-            self.log.error('Invalid inputs to get_score')
+            log.error('Invalid inputs to get_score')
             raise InvalidArgument()
         if user.bot:
-            self.log.warning(f'{user.name} is a bot! Not keeping score')
+            log.warning(f'{user.name} is a bot! Not keeping score')
             raise InvalidArgument()
         if word:
-            self.log.info('Single word score not implemented yet.')
+            log.info('Single word score not implemented yet.')
             return -1
         
-        self.log.info(f'Getting score for {user.name} - {noun}')
-
-        # count = 0
-        # data = self.usr.readUsrJson(user.id)
-        # if isinstance(data, str):
-        #     self.log.warning(f'JSON was read as string!{user.name} - {data}')
-        #     return count        
-        # data = data['servers'][str(guild.id)]   # trim it down
-
-        # if noun:
-        #     word_list = self.wrd.getWordList(noun)
-        #     for word in data.keys():
-        #         if word in word_list:
-        #             evidence = data[word]['evidence']
-        #             count = count + len(evidence)
-            
-        #     if count > 0:
-        #         self.log.info(f'Found evidence that {user.name} is a {noun}, count={count}')
-        #     else:
-        #         self.log.info(f'Looks like {user.name} is clean...')
+        log.info(f'Getting score for {user.name} - {noun}')
         if noun:
             word_list = self.wrd.getWordList(noun)
             count = 0
             all_evidence = self.user_tbl.get(where('uid')==user.id)
             # print(all_evidence)
             if not all_evidence:
-                self.log.info('No evidence found :(')
+                log.info('No evidence found :(')
                 return count
             for word in word_list:
                 if word not in all_evidence.keys():
@@ -252,10 +195,8 @@ class Scores(commands.Cog):
                 evidence = list(all_evidence[word])
                 count += len(evidence)
 
-            self.log.info(count)
+            log.info(count)
             return count
-        
-
 
     def text_to_img(self, board : str) -> str:
         """
@@ -269,20 +210,20 @@ class Scores(commands.Cog):
         # check if save_path exists
         if not path.exists('img'):
             mkdir('img')
-            self.log.info('Image folder created.')
+            log.info('Image folder created.')
 
-        self.log.info('Creating image...')
+        log.info('Creating image...')
         try:
             image = Image.new('RGB', (1000,1000),)
             font = ImageFont.truetype(font_path, font_size)
             draw = ImageDraw.Draw(image)
             draw.text((30,30), board, fill=txt_color, font=font)
-        except Exception as e:
-            self.log.error(sys.exc_info())
+        except Exception as ex:
+            log.error(f'Whoopsies {ex}')
             raise
 
         # crop
-        self.log.info('Cropping image...')
+        log.info('Cropping image...')
         image.load()
 
         image_data = np.asarray(image)
@@ -295,7 +236,7 @@ class Scores(commands.Cog):
 
         new_image = Image.fromarray(image_data_new)
 
-        self.log.info('Saving image')
+        log.info('Saving image')
         new_image.save(save_path)
 
         return path.abspath(save_path)        

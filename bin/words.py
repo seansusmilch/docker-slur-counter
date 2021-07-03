@@ -3,9 +3,8 @@ import ntpath
 
 class Words():
     
-    def __init__(self, data_path:str, logging):
+    def __init__(self, data_path:str):
         self.data_path = data_path
-        self.logging = logging
 
     def readWordFile(self, word_file:str):
         """returns the list of words in a file
