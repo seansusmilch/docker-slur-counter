@@ -2,13 +2,9 @@ FROM python:3
 
 WORKDIR /usr/src/app
 
-COPY requirements.txt ./
+COPY ./ ./
 RUN apt update && apt upgrade -y && pip install --no-cache-dir -r requirements.txt
 
-COPY ./bot.py .
-COPY ./bin ./bin
-COPY ./fonts ./fonts
+VOLUME ["/config", "/data"]
 
-VOLUME [ "/data", "/logs", "/config" ]
-
-CMD ["python", "./bot.py"]
+CMD ["python", "./prod.py"]

@@ -1,11 +1,9 @@
-.vscode
 .env
-env
-tutorials
+config.yml
+config.yaml
 __pycache__
-venv
-config
-data
-logs
-scratch
 img
+data
+scripts
+.gitignore
+*.gz

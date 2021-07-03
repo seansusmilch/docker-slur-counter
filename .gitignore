@@ -1,12 +1,7 @@
-.vscode
 .env
-env
-tutorials
+config.yml
+config.yaml
 __pycache__
-venv
-config
-data
-logs
-scratch
 img
-*.tar.gz
+data
+*.gz

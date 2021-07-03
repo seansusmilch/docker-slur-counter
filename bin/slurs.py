@@ -19,12 +19,12 @@ class SlurCounter(commands.Bot):
         self.usr = usermod
         self.wrd = wordmod
         # logging.info(f'Using token {token}')
-        self.log.info(f'Registering cogs')
+        log.info(f'Registering cogs')
         self.add_cog(Scores(self, logging, usermod, wordmod, user_tbl))
         self.run(token)
 
     async def on_ready(self):
-        self.log.info(f'{self.user.name} has connected to Discord!')
+        log.info(f'{self.user.name} has connected to Discord!')
 
     async def on_command_error(self, ctx, err):
         if isinstance(err, commands.errors.CheckFailure):
