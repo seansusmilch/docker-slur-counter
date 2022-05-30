@@ -35,17 +35,19 @@ async def test_loop(client:EpicDiscordBot):
         print(await client.get_connected_voice(740393371021082793))
 
 if __name__ == '__main__':
-    from prod import conf
-    import asyncio
-    import threading
-    
+    from prod import conf, logging_setup
+    # import asyncio
+    # import threading
+    logging_setup()
+
     DISCORD_TOKEN = conf['discord']['bot_token'].get()
     DATA_PATH = conf['discord']['slur_data'].get(str)
     
     client = EpicDiscordBot(DATA_PATH)
-    loop = asyncio.get_event_loop()
-    loop.create_task(client.start(DISCORD_TOKEN))
-    threading.Thread(target=loop.run_forever, daemon=True).start()
+    client.run(DISCORD_TOKEN)
+    # loop = asyncio.get_event_loop()
+    # loop.create_task(client.start(DISCORD_TOKEN))
+    # threading.Thread(target=loop.run_forever, daemon=True).start()
     # loop.run_forever()
 
-    asyncio.run(test_loop(client))
+    # asyncio.run(test_loop(client))

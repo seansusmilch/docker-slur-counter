@@ -51,9 +51,7 @@ class Scores(commands.Cog):
                     self.usr.add_entry(word,message)
 
     @commands.command(name='scores', help='Usage: scores <category> <format>\n\nShows the scoreboard for a certain category of word. Use the "all" category to show scores for all categories. Use !scores with no arguments to show a list of available categories.\n\nAvaliable formats: text,img')
-    async def scoreboard(self, ctx,
-            cat='none',
-            fmt='img'):
+    async def scoreboard(self, ctx, cat='none', fmt='img'):
         
         log.info(f'Processing args: cat="{cat}" fmt="{fmt}"')
 
@@ -85,7 +83,7 @@ class Scores(commands.Cog):
                 scores[user.name] = dict()
                 total = 0
                 for noun in nouns:
-                    new = self.get_score(user,guild,noun=noun)
+                    new, = self.get_score(user,guild,noun)
                     if new < 0:
                         log.error(f'invalid output from get_score {user},{guild},{noun}')
                     gscores[noun] += new
@@ -116,7 +114,7 @@ class Scores(commands.Cog):
             for u in userls:
                 if u.bot:
                     continue
-                scores[u.name] = self.get_score(u, guild, noun=cat)
+                scores[u.name] = self.get_score(u, guild, cat)
 
             # scores from highest to lowest
             scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
@@ -166,37 +164,37 @@ class Scores(commands.Cog):
 
     
 
-    def get_score(self, user, guild,
-            noun = None,
-            word = None) -> int:
+    def get_score(self, user, guild, noun:str) -> tuple[int,list]:
 
-        if noun == None and word == None:
+        if noun == None:
             log.error('Invalid inputs to get_score')
             raise InvalidArgument()
         if user.bot:
             log.warning(f'{user.name} is a bot! Not keeping score')
             raise InvalidArgument()
-        if word:
-            log.info('Single word score not implemented yet.')
-            return -1
         
         log.info(f'Getting score for {user.name} - {noun}')
-        if noun:
-            word_list = self.wrd.getWordList(noun)
-            count = 0
-            all_evidence = self.user_tbl.get(where('uid')==user.id)
-            # print(all_evidence)
-            if not all_evidence:
-                log.info('No evidence found :(')
-                return count
-            for word in word_list:
-                if word not in all_evidence.keys():
-                    continue
-                evidence = list(all_evidence[word])
-                count += len(evidence)
-
-            log.info(count)
+        word_list = self.wrd.getWordList(noun)
+        count = 0
+        word_scores = {}
+        all_evidence = self.user_tbl.get(where('uid')==user.id)
+        # print(all_evidence)
+        if not all_evidence:
+            log.info('No evidence found :(')
             return count
+        for w in word_list:
+            if w not in all_evidence.keys():
+                continue
+            evidence = list(all_evidence[w])
+            evidence = filter(lambda x: x['server'] == guild.id, evidence)
+            count += len(evidence)
+            word_scores[w] = len(evidence)
+
+
+        log.info(count, word_scores)
+        return count, word_scores
+
+
 
     def text_to_img(self, board : str) -> str:
         """

@@ -1,3 +1,4 @@
+Set-Location '../'
 $files = @(
     './requirements.txt'
     './bot.py'
@@ -13,4 +14,4 @@ $files = @(
 Get-ChildItem -Include __pycache__ -Recurse -Force | Remove-Item -Force -Recurse
 
 mkdir builds
-tar -czvf builds/slurs-counter.tar.gz $files
+tar -czvf builds/slur-counter.tar.gz $files

@@ -4,7 +4,7 @@ import asyncio
 from prod import conf
 
 DISCORD_TOKEN = conf['discord']['bot_token'].get()
-CHANNEL_ID = conf['discord']['channel_id'].get()
+CHANNEL_LIST = conf['discord']['channel_list'].get(list)
 DATA_PATH = conf['discord']['slur_data'].get(str)
 
 API_KEY = conf['shortcut']['key'].get()
@@ -22,7 +22,10 @@ async def whoson():
     if not request.headers.get('x-key') == API_KEY:
         return '<h1>Bad request</h1>', 400
     
-    members = await app.discord_client.get_connected_voice(CHANNEL_ID)
+    # members = await app.discord_client.get_connected_voice(CHANNEL_ID)
+    members = []
+    for channel in CHANNEL_LIST:
+        members += await app.discord_client.get_connected_voice(channel)
     # members += members
     if not members:
         return 'No one is on right now'

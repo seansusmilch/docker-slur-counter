@@ -6,3 +6,4 @@ img
 data
 *.gz
 builds
+migrate
