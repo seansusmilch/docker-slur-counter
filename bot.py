@@ -10,7 +10,8 @@ class EpicDiscordBot(commands.Bot):
     def __init__(self, data_path:str, command_prefix='!'):
         super(EpicDiscordBot, self).__init__(command_prefix=command_prefix, intents=INTENTS)
         log.info(f'Registering cogs')
-        asyncio.run(self.add_cog(Scores(self, data_path)))
+        # asyncio.run(self.add_cog(Scores(self, data_path)))
+        self.add_cog(Scores(self, data_path))
 
     async def on_ready(self):
         print(f'Logged in as {self.user}')
@@ -45,6 +46,7 @@ if __name__ == '__main__':
     DATA_PATH = conf['discord']['slur_data'].get(str)
     
     client = EpicDiscordBot(DATA_PATH, 's.')
+    # asyncio.run(client.add_cog(Scores(self, data_path)))
     client.run(DISCORD_TOKEN)
     # loop = asyncio.get_event_loop()
     # loop.create_task(client.start(DISCORD_TOKEN))
