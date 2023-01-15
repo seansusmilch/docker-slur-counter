@@ -190,7 +190,7 @@ class Scores(commands.Cog):
         count = 0
         word_scores = {}
         all_evidence = self.user_tbl.get(where('uid')==user.id)
-        print(all_evidence)
+        # print(all_evidence)
         if not all_evidence:
             log.info('No evidence found :(')
             return count, word_scores
