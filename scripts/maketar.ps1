@@ -1,4 +1,4 @@
-Set-Location '../'
+# Set-Location '../'
 $files = @(
     './requirements.txt'
     './bot.py'

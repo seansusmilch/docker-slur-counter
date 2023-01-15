@@ -6,6 +6,7 @@ from prod import conf
 DISCORD_TOKEN = conf['discord']['bot_token'].get()
 CHANNEL_LIST = conf['discord']['channel_list'].get(list)
 DATA_PATH = conf['discord']['slur_data'].get(str)
+COMMAND_PREFIX = conf['discord']['command_prefix'].get(str)
 
 API_KEY = conf['shortcut']['key'].get()
 
@@ -14,7 +15,7 @@ app = Quart(__name__)
 @app.before_serving
 async def before_serving():
     loop = asyncio.get_event_loop()
-    app.discord_client = EpicDiscordBot(DATA_PATH)
+    app.discord_client = EpicDiscordBot(DATA_PATH, COMMAND_PREFIX)
     loop.create_task(app.discord_client.start(DISCORD_TOKEN))
 
 @app.route('/whoson', methods=['GET'])

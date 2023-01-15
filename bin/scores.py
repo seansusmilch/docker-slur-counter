@@ -1,3 +1,4 @@
+import json
 from bin.words import Words
 from bin.users import Users
 from os import mkdir, path
@@ -5,8 +6,9 @@ import logging as log
 
 import discord
 import numpy as np
-from discord.errors import InvalidArgument
+# from discord.errors import InvalidArgument
 from discord.ext import commands
+from discord import app_commands
 from texttable import Texttable
 
 # from bin.users import Users
@@ -39,16 +41,22 @@ class Scores(commands.Cog):
         nouns = self.wrd.getNouns()
         word_lists = self.wrd.getWordLists()
         log.debug(f'loaded words from {str(nouns)}')
+        log.debug(f'Searching message: {message.content.lower()}')
 
         for word_list in word_lists:
+            # log.debug(f'checking: {str(word_list)}')
             n = nouns[word_lists.index(word_list)]
+            # log.debug(f'nouns: {n}')
             for word in word_list:
                 if word in message.content.lower():
+                    log.debug('Found bad word!')
                     if not self.silence:
                         await message.channel.send(f"<@{message.author.id}> is a certified {n}" )
                     if self.reactions:
+                        log.debug('Adding reaction')
                         await message.add_reaction("😱")
                     self.usr.add_entry(word,message)
+        # await self.bot.process_commands(message)
 
     @commands.command(name='scores', help='Usage: scores <category> <format>\n\nShows the scoreboard for a certain category of word. Use the "all" category to show scores for all categories. Use !scores with no arguments to show a list of available categories.\n\nAvaliable formats: text,img')
     async def scoreboard(self, ctx, cat='none', fmt='img'):
@@ -83,17 +91,21 @@ class Scores(commands.Cog):
                 scores[user.name] = dict()
                 total = 0
                 for noun in nouns:
-                    new, = self.get_score(user,guild,noun)
+                    new, word_scores = self.get_score(user,guild,noun)
+                    log.debug(f'new: {new}')
                     if new < 0:
                         log.error(f'invalid output from get_score {user},{guild},{noun}')
                     gscores[noun] += new
                     total += new
                     scores[user.name][noun] = new
+                    # log.debug(f'current scoreboard: {json.dumps(scores, indent=4)}')
 
                 scores[user.name]['total'] = total
 
+            log.debug(f'gscores: {gscores}\nscores: {scores}')
             gscores = dict(sorted(gscores.items(), key=lambda x: x[1], reverse=True))
             scores = dict(sorted(scores.items(), key=lambda x: x[1]['total'], reverse=True))
+            log.debug(f'gscores: {gscores}\nscores: {scores}')
 
             for k in gscores.keys():
                 vals[0].append(f'{k[:10]}\n{gscores[k]}')
@@ -114,7 +126,7 @@ class Scores(commands.Cog):
             for u in userls:
                 if u.bot:
                     continue
-                scores[u.name] = self.get_score(u, guild, cat)
+                scores[u.name], word_scores = self.get_score(u, guild, cat)
 
             # scores from highest to lowest
             scores_ordered = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True))
@@ -168,30 +180,30 @@ class Scores(commands.Cog):
 
         if noun == None:
             log.error('Invalid inputs to get_score')
-            raise InvalidArgument()
+            # raise InvalidArgument()
         if user.bot:
             log.warning(f'{user.name} is a bot! Not keeping score')
-            raise InvalidArgument()
+            # raise InvalidArgument()
         
-        log.info(f'Getting score for {user.name} - {noun}')
+        log.info(f'Getting score for {user.name} - {guild} - {noun}')
         word_list = self.wrd.getWordList(noun)
         count = 0
         word_scores = {}
         all_evidence = self.user_tbl.get(where('uid')==user.id)
-        # print(all_evidence)
+        print(all_evidence)
         if not all_evidence:
             log.info('No evidence found :(')
-            return count
+            return count, word_scores
         for w in word_list:
             if w not in all_evidence.keys():
                 continue
             evidence = list(all_evidence[w])
-            evidence = filter(lambda x: x['server'] == guild.id, evidence)
+            evidence = list(filter(lambda x: x['server'] == guild.id, evidence))
             count += len(evidence)
             word_scores[w] = len(evidence)
 
 
-        log.info(count, word_scores)
+        log.info(f'{count} - {word_scores}')
         return count, word_scores
 
 

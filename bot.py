@@ -2,14 +2,15 @@ import discord
 from discord.ext import commands 
 from bin.scores import Scores
 import logging as log
+import asyncio
 
 INTENTS = discord.Intents.all()
 
 class EpicDiscordBot(commands.Bot):
-    def __init__(self, data_path:str):
-        super(EpicDiscordBot, self).__init__(command_prefix='!', intents=INTENTS)
+    def __init__(self, data_path:str, command_prefix='!'):
+        super(EpicDiscordBot, self).__init__(command_prefix=command_prefix, intents=INTENTS)
         log.info(f'Registering cogs')
-        self.add_cog(Scores(self, data_path))
+        asyncio.run(self.add_cog(Scores(self, data_path)))
 
     async def on_ready(self):
         print(f'Logged in as {self.user}')
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     DISCORD_TOKEN = conf['discord']['bot_token'].get()
     DATA_PATH = conf['discord']['slur_data'].get(str)
     
-    client = EpicDiscordBot(DATA_PATH)
+    client = EpicDiscordBot(DATA_PATH, 's.')
     client.run(DISCORD_TOKEN)
     # loop = asyncio.get_event_loop()
     # loop.create_task(client.start(DISCORD_TOKEN))
