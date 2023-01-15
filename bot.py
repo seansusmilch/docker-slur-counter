@@ -9,11 +9,13 @@ INTENTS = discord.Intents.all()
 class EpicDiscordBot(commands.Bot):
     def __init__(self, data_path:str, command_prefix='!'):
         super(EpicDiscordBot, self).__init__(command_prefix=command_prefix, intents=INTENTS)
-        log.info(f'Registering cogs')
+        self.data_path = data_path
         # asyncio.run(self.add_cog(Scores(self, data_path)))
-        self.add_cog(Scores(self, data_path))
+        # self.add_cog(Scores(self, data_path))
 
     async def on_ready(self):
+        log.info(f'Registering cogs')
+        await self.add_cog(Scores(self, self.data_path))
         print(f'Logged in as {self.user}')
 
     async def on_command_error(self, ctx, err):
